@@ -124,6 +124,25 @@ if test "x$with_gnutls" = "xyes"; then
     fi
 fi
 
+dnl **********************
+dnl *** Checks for NSS ***
+dnl **********************
+
+AC_ARG_WITH(nss,
+    [AC_HELP_STRING([--with-nss],
+                    [support for NSS @<:@default=check@:>@])],
+    [],
+    [with_nss=check])
+AS_IF([test "$with_nss" != "no"],
+      [PKG_CHECK_MODULES(NSS, [nss],
+         [with_nss=yes
+	  tls_support="nss $tls_support"],
+         [AS_IF([test "x$with_nss" = "xyes"],
+	 	[AC_MSG_FAILURE("$NSS_PKG_ERRORS")])])])
+AM_CONDITIONAL(HAVE_NSS, [test "$with_nss" = "yes"])
+AC_SUBST(NSS_CFLAGS)
+AC_SUBST(NSS_LIBS)
+
 dnl *************************************
 dnl *** Warnings to show if using GCC ***
 dnl *************************************
@@ -220,6 +239,7 @@ AC_CONFIG_FILES([Makefile
                  proxy/gnome/Makefile
                  proxy/tests/Makefile
                  tls/gnutls/Makefile
+                 tls/nss/Makefile
                  tls/tests/Makefile
                 ])
 AC_OUTPUT
@@ -227,7 +247,7 @@ AC_OUTPUT
 echo ""
 echo "  Proxy support: ${proxy_support:-no}"
 echo "  TLS support:   ${tls_support:-no}"
-if test "$tls_support" != "no"; then
+if test "$with_gnutls" = "yes"; then
     echo "  TLS CA file:   ${with_ca_certificates:-(none)}"
     if test -n "$with_ca_certificates"; then
 	if ! test -f "$with_ca_certificates"; then

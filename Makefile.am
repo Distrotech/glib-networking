@@ -19,6 +19,10 @@ if HAVE_GNUTLS
 SUBDIRS += tls/gnutls
 endif
 
+if HAVE_NSS
+SUBDIRS += tls/nss
+endif
+
 SUBDIRS += tls/tests
 
 install-exec-hook:

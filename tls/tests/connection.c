@@ -492,8 +492,9 @@ main (int   argc,
   g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
-  g_setenv ("GIO_EXTRA_MODULES", TOP_BUILDDIR "/tls/gnutls/.libs", TRUE);
-  g_setenv ("GIO_USE_TLS", "gnutls", TRUE);
+  g_setenv ("GIO_EXTRA_MODULES", TOP_BUILDDIR "/tls/" BACKEND "/.libs", TRUE);
+  g_setenv ("GIO_USE_TLS", BACKEND, TRUE);
+  g_assert (g_ascii_strcasecmp (G_OBJECT_TYPE_NAME (g_tls_backend_get_default ()), "GTlsBackend" BACKEND) == 0);
 
   g_test_add ("/tls/connection/basic", TestConnection, NULL,
               setup_connection, test_basic_connection, teardown_connection);

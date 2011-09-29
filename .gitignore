@@ -34,5 +34,5 @@ proxy/libproxy/glib-pacrunner
 proxy/libproxy/org.gtk.GLib.PACRunner.service
 proxy/tests/gnome
 
-/tls/tests/certificate
-/tls/tests/connection
+/tls/tests/certificate-*
+/tls/tests/connection-*

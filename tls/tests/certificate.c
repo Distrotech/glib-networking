@@ -63,15 +63,28 @@ static void
 test_create_destroy_certificate_pem (TestCertificate *test, gconstpointer data)
 {
   GTlsCertificate *cert;
-  gchar *pem = NULL;
+  gchar *pem = NULL, *test_pem_clean, *cert_pem_clean;
   GError *error = NULL;
+  GRegex *re;
 
   cert = g_tls_certificate_new_from_pem (test->pem, test->pem_length, &error);
   g_assert_no_error (error);
   g_assert (G_IS_TLS_CERTIFICATE (cert));
 
   g_object_get (cert, "certificate-pem", &pem, NULL);
-  g_assert_cmpstr (pem, ==, test->pem);
+  g_assert (pem != NULL);
+
+  /* It's OK if they differ in the placement of newlines */
+  re = g_regex_new ("\n", 0, 0, &error);
+  g_assert_no_error (error);
+  test_pem_clean = g_regex_replace_literal (re, test->pem, -1, 0, "", 0, &error);
+  g_assert_no_error (error);
+  cert_pem_clean = g_regex_replace_literal (re, pem, -1, 0, "", 0, &error);
+  g_assert_no_error (error);
+
+  g_assert_cmpstr (cert_pem_clean, ==, test_pem_clean);
+  g_free (test_pem_clean);
+  g_free (cert_pem_clean);
   g_free (pem);
 
   g_object_add_weak_pointer (G_OBJECT (cert), (gpointer *)&cert);
@@ -175,6 +188,12 @@ static void
 teardown_verify (TestVerify      *test,
                  gconstpointer    data)
 {
+  g_assert (G_IS_TLS_DATABASE (test->database));
+  g_object_add_weak_pointer (G_OBJECT (test->database),
+			     (gpointer *)&test->database);
+  g_object_unref (test->database);
+  g_assert (test->database == NULL);
+
   g_assert (G_IS_TLS_CERTIFICATE (test->cert));
   g_object_add_weak_pointer (G_OBJECT (test->cert),
 			     (gpointer *)&test->cert);
@@ -186,12 +205,6 @@ teardown_verify (TestVerify      *test,
 			     (gpointer *)&test->anchor);
   g_object_unref (test->anchor);
   g_assert (test->anchor == NULL);
-
-  g_assert (G_IS_TLS_DATABASE (test->database));
-  g_object_add_weak_pointer (G_OBJECT (test->database),
-			     (gpointer *)&test->database);
-  g_object_unref (test->database);
-  g_assert (test->database == NULL);
 
   g_object_add_weak_pointer (G_OBJECT (test->identity),
 			     (gpointer *)&test->identity);
@@ -566,8 +579,9 @@ main (int   argc,
   g_type_init ();
   g_test_init (&argc, &argv, NULL);
 
-  g_setenv ("GIO_EXTRA_MODULES", TOP_BUILDDIR "/tls/gnutls/.libs", TRUE);
-  g_setenv ("GIO_USE_TLS", "gnutls", TRUE);
+  g_setenv ("GIO_EXTRA_MODULES", TOP_BUILDDIR "/tls/" BACKEND "/.libs", TRUE);
+  g_setenv ("GIO_USE_TLS", BACKEND, TRUE);
+  g_assert (g_ascii_strcasecmp (G_OBJECT_TYPE_NAME (g_tls_backend_get_default ()), "GTlsBackend" BACKEND) == 0);
 
   g_test_add_func ("/tls/backend/default-database-is-singleton",
                    test_default_database_is_singleton);
